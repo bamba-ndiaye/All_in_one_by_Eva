@@ -1,58 +1,137 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# All in One by Eva
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Application web développée avec Laravel dans le cadre d'un projet d'équipe.
 
-## About Laravel
+## Technologies utilisées
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Backend :** PHP et Laravel
+- **Base de données :** MySQL
+- **Frontend :** Blade, JavaScript et Tailwind CSS
+- **Gestion des dépendances PHP :** Composer
+- **Gestion des dépendances JavaScript :** npm et Vite
+- **Versioning :** Git et GitHub
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prérequis
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Avant de commencer, installez :
 
-## Learning Laravel
+- PHP et ses extensions nécessaires à Laravel
+- Composer
+- MySQL
+- Node.js et npm
+- Git
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Installation du projet
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 1. Récupérer le projet
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone URL_DU_DEPOT
+cd All_in_one_by_Eva
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Remplacez `URL_DU_DEPOT` par l'adresse GitHub du projet.
 
-## Contributing
+### 2. Installer les dépendances PHP
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer install
+```
 
-## Code of Conduct
+### 3. Configurer l'environnement
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+cp .env.example .env
+```
 
-## Security Vulnerabilities
+Générez la clé de l'application :
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan key:generate
+```
 
-## License
+### 4. Configurer MySQL
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Créez une base de données nommée :
+
+```text
+all_in_one_eva
+```
+
+Configurez ensuite les informations de connexion dans le fichier `.env` :
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=all_in_one_eva
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Adaptez le nom d'utilisateur et le mot de passe selon votre installation MySQL.
+
+### 5. Exécuter les migrations
+
+```bash
+php artisan migrate
+```
+
+### 6. Installer les dépendances frontend
+
+```bash
+npm install
+```
+
+### 7. Lancer le projet
+
+Dans un premier terminal :
+
+```bash
+php artisan serve
+```
+
+Dans un deuxième terminal :
+
+```bash
+npm run dev
+```
+
+Ouvrez ensuite votre navigateur à l'adresse :
+
+http://localhost:8000
+
+## Travail en équipe
+
+Le projet est développé en équipe avec Git et GitHub.
+
+Les fonctionnalités sont organisées en différentes branches selon les tâches et les sprints.
+
+Avant de commencer à travailler, pensez à récupérer les dernières modifications :
+
+```bash
+git pull origin main
+```
+
+Créez ensuite votre branche de travail :
+
+```bash
+git switch -c nom-de-votre-branche
+```
+
+Après vos modifications, utilisez une Pull Request pour proposer leur intégration dans la branche principale.
+
+## Commandes Laravel utiles
+
+| Commande | Rôle |
+|---|---|
+| `php artisan serve` | Démarrer le serveur Laravel |
+| `php artisan migrate` | Exécuter les migrations |
+| `php artisan route:list` | Afficher les routes |
+| `php artisan make:controller NomController` | Créer un contrôleur |
+| `php artisan make:model NomModel` | Créer un modèle |
+| `php artisan optimize:clear` | Vider les caches Laravel |
+
+## Licence
+
+Projet développé dans le cadre d'un travail d'équipe.
