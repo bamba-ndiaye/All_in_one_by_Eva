@@ -29,10 +29,21 @@
 
         <nav class="flex-1 space-y-1 overflow-y-auto px-4 pb-4" aria-label="Navigation principale">
             @foreach (config('navigation.items') as $item)
+                {{-- @php
+                    $enabled = Route::has($item['route']);
+                    $active = $enabled && request()->routeIs($item['pattern']);
+                @endphp --}}
                 @php
+                    $required = (array) ($item['permission'] ?? []);
+                    $allowed = $required === []
+                        || collect($required)->contains(fn ($permission) => auth()->user()->can($permission));
                     $enabled = Route::has($item['route']);
                     $active = $enabled && request()->routeIs($item['pattern']);
                 @endphp
+
+                @continue(! $allowed)
+
+
 
                 @if ($enabled)
                     <a href="{{ route($item['route']) }}"
@@ -57,7 +68,9 @@
         </nav>
 
         <div class="border-t border-white/10 px-6 py-4">
-            <p class="truncate text-sm font-medium text-white">{{ auth()->user()->name ?? 'Visiteur' }}</p>
+            {{-- <p class="truncate text-sm font-medium text-white">{{ auth()->user()->name ?? 'Visiteur' }}</p> --}}
+            <p class="truncate text-sm font-medium text-white">{{ auth()->user()->name }}</p>
+            <p class="text-xs text-bordeaux-200">{{ auth()->user()->role->label() }}</p>
             @if (Route::has('logout'))
                 <form method="POST" action="{{ route('logout') }}" class="mt-2">
                     @csrf
