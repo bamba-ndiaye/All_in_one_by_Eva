@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -36,6 +37,10 @@ class User extends Authenticatable
     public function extraPermissions(): HasMany
     {
         return $this->hasMany(UserPermission::class);
+    }
+        public function employe(): HasOne
+    {
+        return $this->hasOne(Employe::class);
     }
 
     public function isAdmin(): bool
