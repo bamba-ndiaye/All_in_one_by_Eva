@@ -19,11 +19,17 @@ class EmployeController extends Controller
     {
         Gate::authorize('viewAny', Employe::class);
 
-        $statut = $request->query('statut');
+        // $statut = $request->query('statut');
+
+        // $filters = [
+        //     'q' => trim((string) $request->query('q', '')),
+        //     'statut' => in_array($statut, ['actifs', 'inactifs', 'tous'], true) ? $statut : 'tous',
+        // ];
+        $text = fn (string $key): string => is_string($request->query($key)) ? trim($request->query($key)) : '';
 
         $filters = [
-            'q' => trim((string) $request->query('q', '')),
-            'statut' => in_array($statut, ['actifs', 'inactifs', 'tous'], true) ? $statut : 'tous',
+            'q' => $text('q'),
+            'statut' => in_array($text('statut'), ['actifs', 'inactifs', 'tous'], true) ? $text('statut') : 'tous',
         ];
 
         $like = '%'.addcslashes($filters['q'], '%_\\').'%';
