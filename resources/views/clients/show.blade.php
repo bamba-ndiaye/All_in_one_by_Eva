@@ -1,12 +1,25 @@
 <x-layouts.app :title="$client->nomComplet()">
     <x-page-header :title="$client->nomComplet()"
                    :subtitle="'Inscrit(e) le '.$client->created_at->translatedFormat('d F Y')">
-        <x-slot:actions>
+        {{-- <x-slot:actions>
             <a href="{{ route('clients.index') }}" class="btn-secondary">Retour aux clients</a>
             @can('update', $client)
                 <a href="{{ route('clients.edit', $client) }}" class="btn-primary">Modifier</a>
             @endcan
+        </x-slot:actions> --}}
+
+        <x-slot:actions>
+            <a href="{{ route('clients.index') }}" class="btn-secondary">Retour aux clients</a>
+            @can('update', $client)
+                <a href="{{ route('clients.edit', $client) }}" class="btn-secondary">Modifier</a>
+            @endcan
+            @if ($client->is_active)
+                @can('create', \App\Models\RendezVous::class)
+                    <a href="{{ route('rendez-vous.create', ['client' => $client->id]) }}" class="btn-primary">Prendre rendez-vous</a>
+                @endcan
+            @endif
         </x-slot:actions>
+
     </x-page-header>
 
     <div class="grid gap-6 lg:grid-cols-3">
@@ -41,13 +54,53 @@
                 <p class="mt-3 whitespace-pre-line text-sm {{ $client->notes ? '' : 'text-stone-400' }}">{{ $client->notes ?? 'Aucune note.' }}</p>
             </section>
 
-            <section class="card">
+            {{-- <section class="card">
                 <h2 class="text-lg font-semibold">Historique</h2>
                 <p class="mt-3 text-sm text-stone-500">
                     Les rendez-vous, prestations réalisées, montants payés, dernière visite et points de fidélité
                     apparaîtront ici dès que ces modules seront en place.
                 </p>
+            </section> --}}
+
+                        <section class="card">
+                <h2 class="text-lg font-semibold">Historique</h2>
+
+                @if (auth()->user()->can('appointments.view'))
+                    @if ($rendezVous->isEmpty())
+                        <p class="mt-3 text-sm text-stone-500">Aucun rendez-vous enregistré.</p>
+                    @else
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="text-xs uppercase tracking-wide text-stone-500">
+                                    <tr>
+                                        <th class="py-2 pr-3">Date</th>
+                                        <th class="px-3 py-2">Prestations</th>
+                                        <th class="px-3 py-2">Avec</th>
+                                        <th class="px-3 py-2">Statut</th>
+                                        <th class="py-2 pl-3"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($rendezVous as $rdv)
+                                        <tr class="border-t border-beige-100">
+                                            <td class="whitespace-nowrap py-3 pr-3">{{ $rdv->date->format('d/m/Y') }} · {{ $rdv->debut() }}</td>
+                                            <td class="px-3 py-3">{{ $rdv->lignes->pluck('nom')->join(', ') }}</td>
+                                            <td class="px-3 py-3">{{ $rdv->employe->prenom }}</td>
+                                            <td class="px-3 py-3"><span class="badge {{ $rdv->statut->badge() }}">{{ $rdv->statut->label() }}</span></td>
+                                            <td class="py-3 pl-3 text-right"><a href="{{ route('rendez-vous.show', $rdv) }}" class="font-medium text-bordeaux-700 hover:text-bordeaux-900">Voir</a></td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                @endif
+
+                <p class="mt-4 text-sm text-stone-500">
+                    Les paiements, la dernière visite et les points de fidélité apparaîtront ici dès que ces modules seront en place.
+                </p>
             </section>
+
         </div>
 
         <div class="space-y-6">

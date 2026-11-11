@@ -18,13 +18,22 @@ class ServiceController extends Controller
     {
         Gate::authorize('viewAny', Service::class);
 
-        $statut = $request->query('statut');
+        // $statut = $request->query('statut');
+
+        // $filters = [
+        //     'q' => trim((string) $request->query('q', '')),
+        //     'categorie' => $request->integer('categorie') ?: null,
+        //     'zone' => ZoneSalon::tryFrom((string) $request->query('zone'))?->value,
+        //     'statut' => in_array($statut, ['actifs', 'inactifs', 'tous'], true) ? $statut : 'tous',
+        // ];
+
+        $text = fn (string $key): string => is_string($request->query($key)) ? trim($request->query($key)) : '';
 
         $filters = [
-            'q' => trim((string) $request->query('q', '')),
+            'q' => $text('q'),
             'categorie' => $request->integer('categorie') ?: null,
-            'zone' => ZoneSalon::tryFrom((string) $request->query('zone'))?->value,
-            'statut' => in_array($statut, ['actifs', 'inactifs', 'tous'], true) ? $statut : 'tous',
+            'zone' => ZoneSalon::tryFrom($text('zone'))?->value,
+            'statut' => in_array($text('statut'), ['actifs', 'inactifs', 'tous'], true) ? $text('statut') : 'tous',
         ];
 
         $services = Service::query()
