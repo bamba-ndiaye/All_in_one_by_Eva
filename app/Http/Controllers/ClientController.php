@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Models\RendezVous;
 
 class ClientController extends Controller
 {
@@ -49,11 +50,27 @@ class ClientController extends Controller
             ->with('success', "La fiche de {$client->nomComplet()} a été créée.");
     }
 
-    public function show(Client $client): View
+    // public function show(Client $client): View
+    // {
+    //     Gate::authorize('view', $client);
+
+    //     return view('clients.show', compact('client'));
+    // }
+
+        public function show(Client $client): View
     {
         Gate::authorize('view', $client);
 
-        return view('clients.show', compact('client'));
+        $rendezVous = auth()->user()->can('appointments.view')
+            ? RendezVous::with(['employe', 'lignes'])
+                ->where('client_id', $client->id)
+                ->orderByDesc('date')
+                ->orderByDesc('heure_debut')
+                ->limit(10)
+                ->get()
+            : collect();
+
+        return view('clients.show', compact('client', 'rendezVous'));
     }
 
     public function edit(Client $client): View

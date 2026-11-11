@@ -8,7 +8,7 @@
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
-
+@source '../../app/Enums/*.php';
 @theme {
     --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
     --font-serif: 'Playfair Display', Georgia, serif;

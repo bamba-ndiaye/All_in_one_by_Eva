@@ -29,7 +29,12 @@ class DemoServicesSeeder extends Seeder
         $crees = [];
 
         foreach ($services as [$categorie, $nom, $prix, $duree, $zone]) {
-            $categorieId = CategorieService::where('nom', $categorie)->firstOrFail()->id;
+            // $categorieId = CategorieService::where('nom', $categorie)->firstOrFail()->id;
+
+            $categorieId = CategorieService::firstOrCreate(
+                ['nom' => $categorie],
+                ['ordre' => (int) CategorieService::max('ordre') + 1],
+                )->id;
 
             $crees[$nom] = Service::updateOrCreate(
                 ['categorie_service_id' => $categorieId, 'nom' => $nom],
