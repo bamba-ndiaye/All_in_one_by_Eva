@@ -7,6 +7,7 @@ use App\Enums\ZoneSalon;
 use App\Support\Fcfa;
 use App\Support\Heure;
 use Carbon\Carbon;
+use App\Models\Client;
 use Database\Factories\RendezVousFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -85,5 +86,28 @@ class RendezVous extends Model
     public function prixFormate(): string
     {
         return Fcfa::format($this->prix_prevu);
+    }
+
+        public function paiements(): HasMany
+    {
+        return $this->hasMany(Paiement::class, 'rendez_vous_id');
+    }
+
+    /** Total encaissé, annulations déduites. */
+    public function montantPaye(): int
+    {
+        return (int) $this->paiements()->sum('montant');
+    }
+
+    public function resteAPayer(): int
+    {
+        return (int) $this->prix_prevu - $this->montantPaye();
+    }
+
+    /** Rendez-vous terminés dont le prix n'est pas entièrement réglé. */
+    public function scopeImpayes(Builder $query): void
+    {
+        $query->where('statut', StatutRendezVous::Termine->value)
+            ->whereRaw('prix_prevu > (select coalesce(sum(p.montant), 0) from paiements p where p.rendez_vous_id = rendez_vous.id)');
     }
 }

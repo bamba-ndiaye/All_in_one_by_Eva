@@ -6,6 +6,7 @@ use App\Enums\StatutRendezVous;
 use App\Models\Employe;
 use App\Models\RendezVous;
 use App\Models\User;
+use App\Support\Fcfa;
 use App\Support\Heure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -98,6 +99,14 @@ class RendezVousService
             $this->verifier($data, $user, $rdv);
 
             $compo = $this->scheduler->composer($data['services'] ?? [], $data['forfaits'] ?? []);
+
+            // Un rendez-vous qui a reçu de l'argent ne peut plus changer de prix.
+            if ($rdv->montantPaye() > 0 && $compo['prix'] !== (int) $rdv->prix_prevu) {
+                throw ValidationException::withMessages([
+                    'services' => 'Ce rendez-vous a déjà reçu un paiement : son prix ne peut plus changer. Faites annuler le paiement, ou créez un nouveau rendez-vous.',
+                ]);
+            }
+
             $debut = Heure::toMinutes($data['heure_debut']);
 
             $avant = $this->resume($rdv);
@@ -157,6 +166,12 @@ class RendezVousService
             if (! $ancien->peutPasserA($vers)) {
                 throw ValidationException::withMessages([
                     'statut' => "Un rendez-vous « {$ancien->label()} » ne peut pas passer à « {$vers->label()} ».",
+                ]);
+            }
+
+            if ($vers === StatutRendezVous::Annule && $rdv->montantPaye() > 0) {
+                throw ValidationException::withMessages([
+                    'statut' => 'Ce rendez-vous a reçu '.Fcfa::format($rdv->montantPaye()).' : faites d\'abord annuler le paiement (remboursement) avant de l\'annuler.',
                 ]);
             }
 
