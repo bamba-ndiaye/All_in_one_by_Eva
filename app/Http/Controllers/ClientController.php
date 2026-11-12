@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Models\RendezVous;
+use App\Models\Paiement;
 
 class ClientController extends Controller
 {
@@ -57,11 +58,13 @@ class ClientController extends Controller
     //     return view('clients.show', compact('client'));
     // }
 
-        public function show(Client $client): View
+      public function show(Client $client): View
     {
         Gate::authorize('view', $client);
 
-        $rendezVous = auth()->user()->can('appointments.view')
+        $user = auth()->user();
+
+        $rendezVous = $user->can('appointments.view')
             ? RendezVous::with(['employe', 'lignes'])
                 ->where('client_id', $client->id)
                 ->orderByDesc('date')
@@ -70,7 +73,19 @@ class ClientController extends Controller
                 ->get()
             : collect();
 
-        return view('clients.show', compact('client', 'rendezVous'));
+        $voitCaisse = $user->can('viewAny', Paiement::class);
+
+        $paiements = $voitCaisse
+            ? Paiement::with(['mode', 'annulation'])
+                ->where('client_id', $client->id)
+                ->orderByDesc('id')
+                ->limit(10)
+                ->get()
+            : collect();
+
+        $totalPaye = $voitCaisse ? (int) Paiement::where('client_id', $client->id)->sum('montant') : null;
+
+        return view('clients.show', compact('client', 'rendezVous', 'voitCaisse', 'paiements', 'totalPaye'));
     }
 
     public function edit(Client $client): View

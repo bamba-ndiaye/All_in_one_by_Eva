@@ -16,4 +16,10 @@ return [
         // Pause minimale entre deux rendez-vous d'une même personne (en minutes).
         'pause_minutes' => (int) env('RDV_PAUSE_MINUTES', 0),
     ],
+
+    // Coordonnées imprimées sur les reçus (facultatives).
+    'recu' => [
+        'adresse' => env('SALON_ADRESSE'),
+        'telephone' => env('SALON_TELEPHONE'),
+    ],
 ];

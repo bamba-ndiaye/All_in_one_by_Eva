@@ -271,6 +271,11 @@ class CaisseService
             return $corrige;
         });
     }
+     /** Un rendez-vous ne peut être encaissé que dans certains statuts. */
+    public function estEncaissable(RendezVous $rdv): bool
+    {
+        return in_array($rdv->statut, self::STATUTS_PAYABLES, true);
+    }
 
     /** @return array{du: int, paye: int, reste: int} */
     public function solde(RendezVous $rdv): array

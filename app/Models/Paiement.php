@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\TypePaiement;
 use App\Support\Fcfa;
 use Carbon\CarbonInterface;
-use GuzzleHttp\Client;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
