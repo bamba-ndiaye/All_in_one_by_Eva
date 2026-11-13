@@ -17,6 +17,16 @@ enum RoleUtilisateur: string
         };
     }
 
+    /** Ce que ce rôle permet, en une phrase. */
+    public function description(): string
+    {
+        return match ($this) {
+            self::Administratrice => 'Accès complet : finances, équipe, paramètres et comptes.',
+            self::Receptionniste => 'Accueil : clients, rendez-vous et encaissements.',
+            self::Professionnel => 'Prestations : voit son propre planning et met à jour ses rendez-vous.',
+        };
+    }
+
     /**
      * Permissions accordées par défaut à ce rôle.
      * L'administratrice les possède toutes.

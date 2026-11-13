@@ -1,98 +1,121 @@
 @php
     $editing = $compte->exists;
     $roleInitial = (string) old('role', $compte->role?->value ?? 'receptionniste');
+    $selection = array_values($selection);
 @endphp
 
 <x-layouts.app :title="$editing ? 'Modifier le compte' : 'Nouveau compte'">
     <x-page-header :title="$editing ? 'Modifier le compte de '.$compte->name : 'Nouveau compte'"
-                   subtitle="Le rôle donne les droits de base ; vous pouvez en ajouter d'autres individuellement." />
+                   subtitle="Nom, e-mail, rôle et mot de passe : c'est tout ce qu'il faut." />
 
     <form method="POST"
           action="{{ $editing ? route('utilisateurs.update', $compte) : route('utilisateurs.store') }}"
-          class="card max-w-3xl space-y-6"
-          x-data="{ loading: false, role: @js($roleInitial), droitsParRole: @js($droitsParRole) }"
+          class="card max-w-3xl space-y-8"
+          x-data="{
+              loading: false,
+              role: @js($roleInitial),
+              droitsParRole: @js($droitsParRole),
+              choisis: @js($selection),
+              ouvert: {{ $selection !== [] ? 'true' : 'false' }},
+              inclus(p) { return (this.droitsParRole[this.role] || []).includes(p) },
+              get nbEnPlus() { return this.choisis.filter(p => ! this.inclus(p)).length },
+          }"
           @submit="loading = true">
         @csrf
         @if ($editing)
             @method('PUT')
         @endif
 
-        <div class="grid gap-6 sm:grid-cols-2">
+        {{-- 1. Identité --}}
+        <div class="grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="name" class="label">Nom complet</label>
                 <input id="name" name="name" class="input" required maxlength="100" autocomplete="off"
-                       value="{{ old('name', $compte->name) }}">
+                       placeholder="Awa Fall" value="{{ old('name', $compte->name) }}">
             </div>
             <div>
-                <label for="email" class="label">Adresse e-mail (identifiant de connexion)</label>
+                <label for="email" class="label">Adresse e-mail</label>
                 <input id="email" name="email" type="email" class="input" required maxlength="150" autocomplete="off"
-                       value="{{ old('email', $compte->email) }}">
-            </div>
-            <div>
-                <label for="role" class="label">Rôle</label>
-                @if ($soiMeme)
-                    <input type="hidden" name="role" value="{{ $compte->role->value }}">
-                    <select id="role" class="input" disabled>
-                        <option>{{ $compte->role->label() }}</option>
-                    </select>
-                    <p class="mt-1.5 text-xs text-stone-500">Vous ne pouvez pas changer votre propre rôle.</p>
-                @else
-                    <select id="role" name="role" class="input" x-model="role" required>
-                        @foreach ($roles as $role)
-                            <option value="{{ $role->value }}">{{ $role->label() }}</option>
-                        @endforeach
-                    </select>
-                @endif
+                       placeholder="awa@exemple.com" value="{{ old('email', $compte->email) }}">
+                <p class="mt-1 text-xs text-stone-500">Elle servira d'identifiant de connexion.</p>
             </div>
         </div>
 
-        <fieldset class="rounded-xl border border-beige-200 p-4">
-            <legend class="px-2 text-sm font-medium text-stone-700">Mot de passe</legend>
-            @if ($editing)
-                <p class="mb-4 text-xs text-stone-500">Laissez vide pour garder le mot de passe actuel. Un nouveau mot de passe déconnecte la personne de tous ses appareils.</p>
+        {{-- 2. Rôle --}}
+        <fieldset>
+            <legend class="label">Rôle</legend>
+            @if ($soiMeme)
+                <input type="hidden" name="role" value="{{ $compte->role->value }}">
+                <div class="rounded-xl border border-beige-200 bg-beige-50 px-4 py-3 text-sm">
+                    <p class="font-medium text-bordeaux-900">{{ $compte->role->label() }}</p>
+                    <p class="mt-0.5 text-xs text-stone-500">Vous ne pouvez pas changer votre propre rôle.</p>
+                </div>
+            @else
+                <div @class(['grid gap-3', 'sm:grid-cols-3' => count($roles) >= 3, 'sm:grid-cols-2' => count($roles) < 3])>
+                    @foreach ($roles as $role)
+                        <label class="cursor-pointer rounded-xl border px-4 py-3 text-sm transition"
+                               :class="role === @js($role->value)
+                                   ? 'border-bordeaux-600 bg-bordeaux-50 ring-1 ring-bordeaux-600'
+                                   : 'border-beige-200 hover:border-beige-300'">
+                            <input type="radio" name="role" value="{{ $role->value }}" x-model="role" class="sr-only" required>
+                            <span class="block font-medium text-bordeaux-900">{{ $role->label() }}</span>
+                            <span class="mt-1 block text-xs text-stone-500">{{ $role->description() }}</span>
+                        </label>
+                    @endforeach
+                </div>
             @endif
+        </fieldset>
+
+        {{-- 3. Mot de passe --}}
+        <div>
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label for="password" class="label">{{ $editing ? 'Nouveau mot de passe' : 'Mot de passe' }}</label>
                     <input id="password" name="password" type="password" class="input" minlength="10" maxlength="100"
-                           autocomplete="new-password" @required(! $editing)>
-                    <p class="mt-1.5 text-xs text-stone-500">10 caractères minimum.</p>
+                           autocomplete="new-password" placeholder="10 caractères minimum" @required(! $editing)>
                 </div>
                 <div>
-                    <label for="password_confirmation" class="label">Confirmer le mot de passe</label>
+                    <label for="password_confirmation" class="label">Confirmer</label>
                     <input id="password_confirmation" name="password_confirmation" type="password" class="input"
                            minlength="10" maxlength="100" autocomplete="new-password" @required(! $editing)>
                 </div>
             </div>
-        </fieldset>
+            @if ($editing)
+                <p class="mt-1.5 text-xs text-stone-500">Laissez vide pour garder le mot de passe actuel. Un nouveau mot de passe déconnecte la personne de tous ses appareils.</p>
+            @endif
+        </div>
 
-        <fieldset x-show="role !== 'administratrice'">
-            <legend class="label">Droits</legend>
-            <p class="mb-4 text-xs text-stone-500">
-                Les cases grisées et cochées font déjà partie du rôle choisi. Cochez les autres pour accorder un droit en plus.
-            </p>
-            <div class="space-y-5">
+        {{-- 4. Droits en plus : repliés, facultatifs --}}
+        <div x-show="role !== 'administratrice'" class="rounded-xl border border-beige-200">
+            <button type="button" @click="ouvert = ! ouvert"
+                    class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm"
+                    :aria-expanded="ouvert.toString()">
+                <span>
+                    <span class="font-medium text-stone-800">Droits en plus</span>
+                    <span class="text-stone-500">(facultatif)</span>
+                    <span x-show="nbEnPlus > 0" x-cloak class="badge ml-2 bg-bordeaux-700 text-white" x-text="nbEnPlus + ' choisi' + (nbEnPlus > 1 ? 's' : '')"></span>
+                </span>
+                <span class="text-xs font-medium text-bordeaux-700" x-text="ouvert ? 'Masquer' : 'Afficher'"></span>
+            </button>
+
+            <div x-show="ouvert" x-cloak class="space-y-5 border-t border-beige-100 px-4 py-4">
+                <p class="text-xs text-stone-500">Le rôle choisi donne déjà ses droits de base. Cochez seulement ce qu'il faut en plus.</p>
+
                 @foreach ($groupes as $groupe => $permissions)
-                    <div>
+                    <div x-show="{{ \Illuminate\Support\Js::from($permissions) }}.some(p => ! inclus(p))">
                         <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">{{ $groupe }}</p>
-                        <div class="grid gap-2 sm:grid-cols-2">
+                        <div class="grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
                             @foreach ($permissions as $permission)
                                 @php $attribuable = in_array($permission, $attribuables, true); @endphp
-                                <label class="flex items-center gap-3 rounded-lg border border-beige-200 px-3 py-2 text-sm"
-                                       :class="(droitsParRole[role] || []).includes(@js($permission)) ? 'bg-beige-50 text-stone-500' : ''">
-                                    {{-- Droit inclus dans le rôle : affiché coché, non envoyé. --}}
-                                    <input type="checkbox" checked disabled
-                                           class="h-4 w-4 rounded border-beige-300 text-bordeaux-700"
-                                           x-show="(droitsParRole[role] || []).includes(@js($permission))" x-cloak>
-                                    <input type="checkbox" name="permissions[]" value="{{ $permission }}"
-                                           class="h-4 w-4 rounded border-beige-300 text-bordeaux-700 focus:ring-bordeaux-500"
-                                           x-show="! (droitsParRole[role] || []).includes(@js($permission))"
-                                           :disabled="(droitsParRole[role] || []).includes(@js($permission)) || {{ $attribuable ? 'false' : 'true' }}"
-                                           @checked(in_array($permission, $selection, true))>
+                                <label class="flex items-start gap-2.5 py-1 text-sm {{ $attribuable ? '' : 'text-stone-400' }}"
+                                       x-show="! inclus(@js($permission))">
+                                    <input type="checkbox" name="permissions[]" value="{{ $permission }}" x-model="choisis"
+                                           class="mt-0.5 h-4 w-4 rounded border-beige-300 text-bordeaux-700 focus:ring-bordeaux-500"
+                                           :disabled="inclus(@js($permission)) || {{ $attribuable ? 'false' : 'true' }}">
                                     <span>
                                         {{ $catalogue[$permission] }}
                                         @unless ($attribuable)
-                                            <span class="block text-xs text-stone-400">Vous ne pouvez pas modifier ce droit.</span>
+                                            <span class="block text-xs">Vous ne pouvez pas modifier ce droit.</span>
                                         @endunless
                                     </span>
                                 </label>
@@ -101,28 +124,11 @@
                     </div>
                 @endforeach
             </div>
-        </fieldset>
-
-        <div x-show="role === 'administratrice'" x-cloak
-             class="rounded-xl border border-beige-200 bg-beige-50 p-4 text-sm text-stone-700">
-            L'administratrice a accès à tout : aucun droit à cocher.
         </div>
-
-        @unless ($editing)
-            <div>
-                <input type="hidden" name="is_active" value="0">
-                <label class="inline-flex items-center gap-2 text-sm text-stone-700">
-                    <input type="checkbox" name="is_active" value="1"
-                           class="h-4 w-4 rounded border-beige-300 text-bordeaux-700 focus:ring-bordeaux-500"
-                           @checked((bool) old('is_active', true))>
-                    Compte actif (la personne peut se connecter)
-                </label>
-            </div>
-        @endunless
 
         <div class="flex flex-wrap gap-3 border-t border-beige-100 pt-6">
             <button type="submit" class="btn-primary" :disabled="loading">
-                <span x-show="! loading">Enregistrer</span>
+                <span x-show="! loading">{{ $editing ? 'Enregistrer' : 'Créer le compte' }}</span>
                 <span x-show="loading" x-cloak>Enregistrement…</span>
             </button>
             <a href="{{ $editing ? route('utilisateurs.show', $compte) : route('utilisateurs.index') }}" class="btn-secondary">Annuler</a>
