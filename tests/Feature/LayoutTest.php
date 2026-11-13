@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class LayoutTest extends TestCase
@@ -25,8 +26,13 @@ class LayoutTest extends TestCase
             ->assertSee('by Eva');
     }
 
-    public function test_les_modules_non_crees_sont_marques_bientot(): void
+    public function test_toutes_les_entrees_du_menu_menent_a_une_page(): void
     {
-        $this->get('/')->assertSee('Bientôt');
+        foreach (config('navigation.items') as $item) {
+            $this->assertTrue(Route::has($item['route']), "Route manquante : {$item['route']}");
+            $this->get(route($item['route']))->assertOk();
+        }
+
+        $this->get('/')->assertDontSee('Bientôt');
     }
 }
