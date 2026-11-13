@@ -154,6 +154,29 @@ class FideliteTest extends CaisseTestCase
         $this->assertSame(20, $this->solde());
     }
 
+    public function test_annuler_un_paiement_apres_usage_des_points_laisse_un_solde_negatif_signale(): void
+    {
+        $paiement = $this->payer($this->rdv(), 20000);
+        $this->fidelite()->utiliser($this->client, $this->brushing, $this->receptionniste);
+
+        // La caisse doit toujours pouvoir corriger une erreur : l'annulation n'est pas bloquée.
+        $this->caisse()->annuler($paiement, 'Double encaissement', $this->admin);
+
+        $this->assertSame(-15, $this->solde());
+
+        $this->actingAs($this->receptionniste);
+        $this->get(route('fidelite.client', $this->client))->assertOk()->assertSee('Solde négatif');
+        $this->get(route('fidelite.index'))->assertOk()->assertSee('Solde négatif');
+
+        // Plus aucune récompense possible tant que le solde est négatif.
+        $this->post(route('fidelite.utiliser', $this->client), ['recompense_id' => $this->brushing->id])
+            ->assertSessionHasErrors('recompense_id');
+
+        // Les prochains achats remboursent la dette.
+        $this->payer($this->rdv(), 20000);
+        $this->assertSame(5, $this->solde());
+    }
+
     public function test_un_professionnel_ne_peut_pas_offrir_de_recompense(): void
     {
         $this->payer($this->rdv(), 20000);

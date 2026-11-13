@@ -12,9 +12,16 @@
         <div class="space-y-6 lg:col-span-2">
             <section class="card">
                 <p class="text-sm text-stone-500">Solde actuel</p>
-                <p class="mt-1 font-serif text-4xl font-semibold text-bordeaux-900">{{ $solde }} <span class="text-xl">points</span></p>
+                <p @class(['mt-1 font-serif text-4xl font-semibold', 'text-bordeaux-900' => $solde >= 0, 'text-red-700' => $solde < 0])>
+                    {{ $solde }} <span class="text-xl">points</span>
+                </p>
                 @php $prochaine = $recompenses->first(fn ($r) => $r->points > $solde); @endphp
-                @if ($prochaine)
+                @if ($solde < 0)
+                    <p class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                        Solde négatif : un paiement a été annulé après l'utilisation de ses points.
+                        Les {{ abs($solde) }} points manquants seront repris sur les prochains achats.
+                    </p>
+                @elseif ($prochaine)
                     <p class="mt-2 text-sm text-stone-500">
                         Encore {{ $prochaine->points - $solde }} points pour « {{ $prochaine->nom }} »
                         @if ($fcfaParPoint > 0)

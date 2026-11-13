@@ -50,7 +50,10 @@
                                         <p class="mt-0.5 text-xs text-stone-500">{{ $client->telephoneAffiche() }}</p>
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-3.5 text-right">
-                                        <span class="font-serif text-lg font-semibold text-bordeaux-900">{{ $points }}</span>
+                                        <span @class(['font-serif text-lg font-semibold', 'text-bordeaux-900' => $points >= 0, 'text-red-700' => $points < 0])>{{ $points }}</span>
+                                        @if ($points < 0)
+                                            <span class="badge ml-2 bg-amber-50 text-amber-700">Solde négatif</span>
+                                        @endif
                                         @if ($atteignable)
                                             <span class="badge ml-2 bg-emerald-50 text-emerald-700" title="Au moins une récompense est disponible">Récompense possible</span>
                                         @endif
