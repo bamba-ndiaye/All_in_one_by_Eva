@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -11,8 +12,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/deconnexion', [LoginController::class, 'destroy'])->name('logout');
 
-    // Page provisoire, remplacée par le vrai tableau de bord au Sprint 4.
-    Route::view('/', 'dashboard')->name('dashboard');
+    Route::get('/', DashboardController::class)->name('dashboard');
 
     // Un fichier de routes par module : routes/modules/*.php
     // Tout ce qui est dans ces fichiers est déjà protégé (connexion + compte actif).
