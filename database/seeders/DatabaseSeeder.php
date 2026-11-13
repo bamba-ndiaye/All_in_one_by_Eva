@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             CategoriesServicesSeeder::class,
             ModesPaiementSeeder::class,
+            CategoriesDepensesSeeder::class,
         ]);
     }
 }
