@@ -56,6 +56,27 @@ return [
     ],
 
     /*
+    | Libellé de chaque groupe de permissions (préfixe avant le point), pour l'affichage.
+    */
+    'groupes' => [
+        'clients' => 'Clients',
+        'services' => 'Prestations',
+        'staff' => 'Équipe',
+        'appointments' => 'Rendez-vous',
+        'payments' => 'Caisse et finances',
+        'finance' => 'Caisse et finances',
+        'expenses' => 'Caisse et finances',
+        'stock' => 'Stock',
+        'messages' => 'Communication et fidélité',
+        'campaigns' => 'Communication et fidélité',
+        'birthdays' => 'Communication et fidélité',
+        'loyalty' => 'Communication et fidélité',
+        'reports' => 'Rapports et administration',
+        'users' => 'Rapports et administration',
+        'settings' => 'Rapports et administration',
+    ],
+
+    /*
     | Droits par défaut des rôles. L'administratrice a tout : elle n'est pas listée.
     */
     'roles' => [
