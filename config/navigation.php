@@ -8,7 +8,7 @@ return [
         ['label' => 'Prestations',     'icon' => 'scissors',         'route' => 'services.index',      'pattern' => 'services.*',         'permission' => 'services.view'],
         ['label' => 'Caisse',          'icon' => 'wallet',           'route' => 'paiements.index',     'pattern' => 'paiements.*',        'permission' => 'payments.view'],
         ['label' => 'Dépenses',        'icon' => 'receipt',          'route' => 'depenses.index',      'pattern' => 'depenses.*',         'permission' => 'expenses.manage'],
-        ['label' => 'Stock',           'icon' => 'package',          'route' => 'produits.index',      'pattern' => 'produits.*',         'permission' => 'stock.view'],
+        ['label' => 'Stock',           'icon' => 'package',          'route' => 'produits.index',      'pattern' => 'produits.*',         'permission' => ['stock.view', 'stock.manage']],
         ['label' => 'Équipe',          'icon' => 'user-cog',         'route' => 'employes.index',      'pattern' => 'employes.*',         'permission' => 'staff.view'],
         ['label' => 'Anniversaires',   'icon' => 'cake',             'route' => 'anniversaires.index', 'pattern' => 'anniversaires.*',    'permission' => 'birthdays.view'],
         ['label' => 'Campagnes',       'icon' => 'message-circle',   'route' => 'campagnes.index',     'pattern' => 'campagnes.*',        'permission' => 'campaigns.manage'],
