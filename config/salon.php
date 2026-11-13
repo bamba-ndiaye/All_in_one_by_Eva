@@ -17,6 +17,11 @@ return [
         'pause_minutes' => (int) env('RDV_PAUSE_MINUTES', 0),
     ],
 
+    'fidelite' => [
+        // Montant encaissé (FCFA) qui rapporte 1 point. 0 = programme de fidélité désactivé.
+        'fcfa_par_point' => (int) env('FIDELITE_FCFA_PAR_POINT', 1000),
+    ],
+
     // Coordonnées imprimées sur les reçus (facultatives).
     'recu' => [
         'adresse' => env('SALON_ADRESSE'),

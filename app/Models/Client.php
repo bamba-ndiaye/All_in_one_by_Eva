@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'prenom', 'nom', 'telephone', 'whatsapp', 'email', 'date_naissance', 'canal_prefere',
@@ -50,6 +51,17 @@ class Client extends Model
     public function numeroWhatsapp(): string
     {
         return $this->whatsapp ?: $this->telephone;
+    }
+
+    public function mouvementsFidelite(): HasMany
+    {
+        return $this->hasMany(MouvementFidelite::class);
+    }
+
+    /** Solde de points de fidélité. */
+    public function pointsFidelite(): int
+    {
+        return (int) $this->mouvementsFidelite()->sum('points');
     }
 
     public function scopeActifs(Builder $query): void

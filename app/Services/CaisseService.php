@@ -17,7 +17,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-
 class CaisseService
 {
     private const MONTANT_MAX = 10_000_000;
@@ -30,9 +29,10 @@ class CaisseService
         StatutRendezVous::Termine,
     ];
 
-    public function __construct(private readonly ActivityLogger $logger)
-    {
-    }
+    public function __construct(
+        private readonly ActivityLogger $logger,
+        private readonly FideliteService $fidelite,
+    ) {}
 
     /**
      * Enregistre un paiement, complet ou partiel.
@@ -162,6 +162,8 @@ class CaisseService
                 $user,
             );
 
+            $this->fidelite->crediterPaiement($paiement, $user);
+
             return $paiement;
         });
     }
@@ -231,6 +233,8 @@ class CaisseService
                 $user,
             );
 
+            $this->fidelite->retirerPaiement($origine, $user);
+
             return $annulation;
         });
     }
@@ -271,7 +275,8 @@ class CaisseService
             return $corrige;
         });
     }
-     /** Un rendez-vous ne peut être encaissé que dans certains statuts. */
+
+    /** Un rendez-vous ne peut être encaissé que dans certains statuts. */
     public function estEncaissable(RendezVous $rdv): bool
     {
         return in_array($rdv->statut, self::STATUTS_PAYABLES, true);
