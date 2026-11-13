@@ -22,6 +22,14 @@ return [
         'fcfa_par_point' => (int) env('FIDELITE_FCFA_PAR_POINT', 1000),
     ],
 
+    'anniversaires' => [
+        // {prenom} et {age} sont remplacés automatiquement.
+        'message' => env(
+            'ANNIVERSAIRE_MESSAGE',
+            "Joyeux anniversaire {prenom} ! 🎉 Toute l'équipe All in One by Eva vous souhaite une merveilleuse journée. Passez nous voir, une petite surprise vous attend au salon.",
+        ),
+    ],
+
     // Coordonnées imprimées sur les reçus (facultatives).
     'recu' => [
         'adresse' => env('SALON_ADRESSE'),
