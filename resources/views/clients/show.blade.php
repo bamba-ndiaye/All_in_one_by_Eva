@@ -202,6 +202,16 @@
         </div>
 
         <div class="space-y-6">
+            @can('loyalty.view')
+                <section class="card">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold">Fidélité</h2>
+                        <a href="{{ route('fidelite.client', $client) }}" class="text-sm font-medium text-bordeaux-700 hover:text-bordeaux-900">Détail</a>
+                    </div>
+                    <p class="mt-3 font-serif text-3xl font-semibold text-bordeaux-900">{{ $client->pointsFidelite() }} <span class="text-base">points</span></p>
+                </section>
+            @endcan
+
             <section class="card">
                 <h2 class="text-lg font-semibold">Messages promotionnels</h2>
                 <p class="mt-3">
