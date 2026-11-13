@@ -19,6 +19,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use App\Models\Paiement;
+use App\Services\CaisseService;
 
 class RendezVousController extends Controller
 {
@@ -94,14 +96,16 @@ class RendezVousController extends Controller
             ->with('success', 'Le rendez-vous a été enregistré.');
     }
 
-    public function show(RendezVous $rendezVous): View
+      public function show(RendezVous $rendezVous, CaisseService $caisse): View
     {
         Gate::authorize('view', $rendezVous);
+
+        $user = auth()->user();
 
         $rendezVous->load(['client', 'employe', 'lignes.forfait', 'createur']);
 
         // L'historique des modifications n'est visible que pour le personnel qui gère les rendez-vous.
-        $journal = auth()->user()->can('create', RendezVous::class)
+        $journal = $user->can('create', RendezVous::class)
             ? HistoriqueAction::with('user')
                 ->where('sujet_type', $rendezVous->getMorphClass())
                 ->where('sujet_id', $rendezVous->id)
@@ -110,7 +114,20 @@ class RendezVousController extends Controller
                 ->get()
             : collect();
 
-        return view('rendez-vous.show', compact('rendezVous', 'journal'));
+        // La section « Paiement » n'est visible que pour qui a accès à la caisse.
+        $voitCaisse = $user->can('viewAny', Paiement::class);
+
+        $paiements = $voitCaisse
+            ? $rendezVous->paiements()->with(['mode', 'annulation'])->orderBy('id')->get()
+            : collect();
+
+        return view('rendez-vous.show', [
+            'rendezVous' => $rendezVous,
+            'journal' => $journal,
+            'voitCaisse' => $voitCaisse,
+            'paiements' => $paiements,
+            'encaissable' => $user->can('create', Paiement::class) && $caisse->estEncaissable($rendezVous),
+        ]);
     }
 
     public function edit(RendezVous $rendezVous): View|RedirectResponse

@@ -96,8 +96,106 @@
                     @endif
                 @endif
 
+                               @if ($voitCaisse)
+                    <h3 class="mt-6 text-xs font-semibold uppercase tracking-wide text-stone-500">Paiements</h3>
+                    <p class="mt-2 text-sm">Total payé : <span class="font-semibold">{{ \App\Support\Fcfa::format($totalPaye) }}</span></p>
+
+                    @if ($paiements->isEmpty())
+                        <p class="mt-2 text-sm text-stone-500">Aucun paiement enregistré.</p>
+                    @else
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="text-xs uppercase tracking-wide text-stone-500">
+                                    <tr>
+                                        <th class="py-2 pr-3">Reçu</th>
+                                        <th class="px-3 py-2">Date</th>
+                                        <th class="px-3 py-2">Mode</th>
+                                        <th class="py-2 pl-3 text-right">Montant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($paiements as $p)
+                                        @php $annule = $p->estAnnule(); @endphp
+                                        <tr class="border-t border-beige-100 {{ $annule ? 'text-stone-400' : '' }}">
+                                            <td class="whitespace-nowrap py-3 pr-3"><a href="{{ route('paiements.show', $p) }}" class="font-medium text-bordeaux-800 hover:text-bordeaux-900">{{ $p->numero() }}</a></td>
+                                            <td class="whitespace-nowrap px-3 py-3">{{ $p->date->format('d/m/Y') }}</td>
+                                            <td class="px-3 py-3">{{ $p->mode->nom }}</td>
+                                            <td class="whitespace-nowrap py-3 pl-3 text-right {{ $p->montant < 0 ? 'text-red-700' : '' }} {{ $annule ? 'line-through' : '' }}">{{ $p->montantFormate() }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                @endif
+
+                              @if ($voitCaisse)
+                    <h3 class="mt-6 text-xs font-semibold uppercase tracking-wide text-stone-500">Paiements</h3>
+                    <p class="mt-2 text-sm">Total payé : <span class="font-semibold">{{ \App\Support\Fcfa::format($totalPaye) }}</span></p>
+
+                    @if ($paiements->isEmpty())
+                        <p class="mt-2 text-sm text-stone-500">Aucun paiement enregistré.</p>
+                    @else
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="text-xs uppercase tracking-wide text-stone-500">
+                                    <tr>
+                                        <th class="py-2 pr-3">Reçu</th>
+                                        <th class="px-3 py-2">Date</th>
+                                        <th class="px-3 py-2">Mode</th>
+                                        <th class="py-2 pl-3 text-right">Montant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($paiements as $p)
+                                        @php $annule = $p->estAnnule(); @endphp
+                                        <tr class="border-t border-beige-100 {{ $annule ? 'text-stone-400' : '' }}">
+                                            <td class="whitespace-nowrap py-3 pr-3"><a href="{{ route('paiements.show', $p) }}" class="font-medium text-bordeaux-800 hover:text-bordeaux-900">{{ $p->numero() }}</a></td>
+                                            <td class="whitespace-nowrap px-3 py-3">{{ $p->date->format('d/m/Y') }}</td>
+                                            <td class="px-3 py-3">{{ $p->mode->nom }}</td>
+                                            <td class="whitespace-nowrap py-3 pl-3 text-right {{ $p->montant < 0 ? 'text-red-700' : '' }} {{ $annule ? 'line-through' : '' }}">{{ $p->montantFormate() }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                @endif
+                @if ($voitCaisse)
+                    <h3 class="mt-6 text-xs font-semibold uppercase tracking-wide text-stone-500">Paiements</h3>
+                    <p class="mt-2 text-sm">Total payé : <span class="font-semibold">{{ \App\Support\Fcfa::format($totalPaye) }}</span></p>
+
+                    @if ($paiements->isEmpty())
+                        <p class="mt-2 text-sm text-stone-500">Aucun paiement enregistré.</p>
+                    @else
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="text-xs uppercase tracking-wide text-stone-500">
+                                    <tr>
+                                        <th class="py-2 pr-3">Reçu</th>
+                                        <th class="px-3 py-2">Date</th>
+                                        <th class="px-3 py-2">Mode</th>
+                                        <th class="py-2 pl-3 text-right">Montant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($paiements as $p)
+                                        @php $annule = $p->estAnnule(); @endphp
+                                        <tr class="border-t border-beige-100 {{ $annule ? 'text-stone-400' : '' }}">
+                                            <td class="whitespace-nowrap py-3 pr-3"><a href="{{ route('paiements.show', $p) }}" class="font-medium text-bordeaux-800 hover:text-bordeaux-900">{{ $p->numero() }}</a></td>
+                                            <td class="whitespace-nowrap px-3 py-3">{{ $p->date->format('d/m/Y') }}</td>
+                                            <td class="px-3 py-3">{{ $p->mode->nom }}</td>
+                                            <td class="whitespace-nowrap py-3 pl-3 text-right {{ $p->montant < 0 ? 'text-red-700' : '' }} {{ $annule ? 'line-through' : '' }}">{{ $p->montantFormate() }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                @endif
+
                 <p class="mt-4 text-sm text-stone-500">
-                    Les paiements, la dernière visite et les points de fidélité apparaîtront ici dès que ces modules seront en place.
+                    La dernière visite et les points de fidélité apparaîtront ici dès que ces modules seront en place.
                 </p>
             </section>
 

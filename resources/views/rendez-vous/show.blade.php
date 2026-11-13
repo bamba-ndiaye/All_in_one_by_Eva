@@ -12,6 +12,9 @@
         ->filter(fn ($vers) => $user->can('changeStatus', [$rendezVous, $vers]) && ! ($vers->estTerrain() && $futur));
     $peutAnnuler = $transitions->contains(\App\Enums\StatutRendezVous::Annule);
     $peutModifier = $user->can('update', $rendezVous) && $rendezVous->statut->estModifiable();
+    $paye = $rendezVous->montantPaye();
+    $reste = (int) $rendezVous->prix_prevu - $paye;
+    $annulationBloquee = $peutAnnuler && $paye > 0;
 @endphp
 
 <x-layouts.app title="Rendez-vous">
@@ -83,6 +86,74 @@
                 </div>
                 <p class="border-t border-beige-100 px-6 py-3 text-xs text-stone-500">Prix et durées enregistrés à la réservation : une modification ultérieure du catalogue ne les change pas.</p>
             </section>
+
+            @if ($voitCaisse)
+                <section class="card overflow-hidden p-0">
+                    <div class="flex items-center justify-between gap-3 border-b border-beige-200 px-6 py-4">
+                        <h2 class="text-lg font-semibold">Paiement</h2>
+                        @if ($encaissable && $reste > 0)
+                            <a href="{{ route('paiements.create', ['rendez_vous' => $rendezVous->id]) }}" class="btn-primary">Encaisser</a>
+                        @endif
+                    </div>
+
+                    <dl class="grid gap-4 px-6 py-4 text-sm sm:grid-cols-3">
+                        <div><dt class="text-stone-500">Prix prévu</dt><dd class="mt-0.5 font-medium">{{ $rendezVous->prixFormate() }}</dd></div>
+                        <div><dt class="text-stone-500">Déjà payé</dt><dd class="mt-0.5 font-medium">{{ \App\Support\Fcfa::format($paye) }}</dd></div>
+                        <div>
+                            <dt class="text-stone-500">Reste à payer</dt>
+                            <dd class="mt-0.5 font-medium">
+                                @if ($reste > 0)
+                                    <span class="text-bordeaux-800">{{ \App\Support\Fcfa::format($reste) }}</span>
+                                @elseif ($rendezVous->prix_prevu > 0)
+                                    <span class="text-emerald-700">Entièrement payé</span>
+                                @else
+                                    —
+                                @endif
+                            </dd>
+                        </div>
+                    </dl>
+
+                    @if ($paiements->isNotEmpty())
+                        <div class="overflow-x-auto border-t border-beige-100">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-beige-50 text-xs uppercase tracking-wide text-stone-500">
+                                    <tr>
+                                        <th class="px-6 py-3">Reçu</th>
+                                        <th class="px-3 py-3">Date</th>
+                                        <th class="px-3 py-3">Mode</th>
+                                        <th class="px-3 py-3 text-right">Montant</th>
+                                        <th class="px-6 py-3">Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($paiements as $p)
+                                        @php $annule = $p->estAnnule(); @endphp
+                                        <tr class="border-t border-beige-100 {{ $annule ? 'text-stone-400' : '' }}">
+                                            <td class="whitespace-nowrap px-6 py-3"><a href="{{ route('paiements.show', $p) }}" class="font-medium text-bordeaux-800 hover:text-bordeaux-900">{{ $p->numero() }}</a></td>
+                                            <td class="whitespace-nowrap px-3 py-3">{{ $p->date->format('d/m/Y') }}</td>
+                                            <td class="px-3 py-3">{{ $p->mode->nom }}</td>
+                                            <td class="whitespace-nowrap px-3 py-3 text-right {{ $p->montant < 0 ? 'text-red-700' : '' }} {{ $annule ? 'line-through' : '' }}">{{ $p->montantFormate() }}</td>
+                                            <td class="px-6 py-3">
+                                                @if ($annule)
+                                                    <span class="badge bg-stone-100 text-stone-500">Annulé</span>
+                                                @else
+                                                    <span class="badge {{ $p->type->badge() }}">{{ $p->type->label() }}</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="border-t border-beige-100 px-6 py-4 text-sm text-stone-500">Aucun paiement enregistré.</p>
+                    @endif
+
+                    @if (! $encaissable && $reste > 0)
+                        <p class="border-t border-beige-100 px-6 py-3 text-xs text-stone-500">Ce rendez-vous ne peut pas être encaissé dans son état actuel.</p>
+                    @endif
+                </section>
+            @endif
         </div>
 
         <div class="space-y-6">
@@ -101,7 +172,7 @@
                         </form>
                     @endforeach
 
-                    @if ($peutAnnuler)
+                    @if ($peutAnnuler && ! $annulationBloquee)
                         <details class="rounded-xl border border-beige-200 p-3">
                             <summary class="cursor-pointer text-sm font-medium text-red-700">Annuler le rendez-vous</summary>
                             <form method="POST" action="{{ route('rendez-vous.statut', $rendezVous) }}" class="mt-3 space-y-3"
@@ -116,6 +187,12 @@
                                 <button type="submit" class="btn-danger w-full">Confirmer l'annulation</button>
                             </form>
                         </details>
+                    @endif
+
+                    @if ($annulationBloquee)
+                        <p class="rounded-xl bg-beige-50 p-3 text-xs text-stone-600">
+                            Ce rendez-vous a reçu un paiement : faites d'abord annuler le paiement (remboursement) avant de l'annuler.
+                        </p>
                     @endif
 
                     @if ($transitions->isEmpty())
