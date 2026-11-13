@@ -14,6 +14,7 @@ return [
         ['label' => 'Campagnes',       'icon' => 'message-circle',   'route' => 'campagnes.index',     'pattern' => 'campagnes.*',        'permission' => 'campaigns.manage'],
         ['label' => 'Fidélité',        'icon' => 'gift',             'route' => 'fidelite.index',      'pattern' => 'fidelite.*',         'permission' => 'loyalty.view'],
         ['label' => 'Rapports',        'icon' => 'trending-up',      'route' => 'rapports.index',      'pattern' => 'rapports.*',         'permission' => 'reports.view'],
-        ['label' => 'Paramètres',      'icon' => 'settings',         'route' => 'parametres.index',    'pattern' => 'parametres.*',       'permission' => 'settings.manage'],
+        ['label' => 'Utilisateurs',    'icon' => 'shield-check',     'route' => 'utilisateurs.index',  'pattern' => 'utilisateurs.*',     'permission' => 'users.manage'],
+        ['label' => 'Paramètres',     'icon' => 'settings',         'route' => 'parametres.index',    'pattern' => 'parametres.*',       'permission' => 'settings.manage'],
     ],
 ];
