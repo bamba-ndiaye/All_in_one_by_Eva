@@ -4,7 +4,7 @@
 @endphp
 
 <x-layouts.app title="Tableau de bord">
-    <x-page-header :title="'Bonjour '.$user->name" subtitle="Bienvenue chez All in One by Eva." />
+    <x-page-header :title="'Bonjour '.$user->name" :subtitle="'Bienvenue chez '.config('app.name').'.'" />
 
     <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
         <x-stat-card label="Votre rôle" :value="$user->role->label()" icon="user-cog" />

@@ -54,7 +54,7 @@ class RapportController extends Controller
             fwrite($out, "\xEF\xBB\xBF"); // BOM : accents corrects dans Excel
             $ligne = fn (array $l) => fputcsv($out, $l, ';');
 
-            $ligne(['Rapport All in One by Eva', 'du '.$debut->format('d/m/Y').' au '.$fin->format('d/m/Y')]);
+            $ligne(['Rapport '.config('app.name'), 'du '.$debut->format('d/m/Y').' au '.$fin->format('d/m/Y')]);
             $ligne([]);
 
             if ($finances) {
