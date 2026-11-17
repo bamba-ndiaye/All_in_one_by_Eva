@@ -1,8 +1,8 @@
 @props(['label', 'value', 'icon' => 'sparkles', 'hint' => null, 'evolution' => null])
 
-<div {{ $attributes->merge(['class' => 'card flex flex-col']) }}>
+<div {{ $attributes->merge(['class' => 'card group flex flex-col transition duration-200 ease-out hover:border-bordeaux-200 hover:shadow-xl hover:shadow-bordeaux-900/10 motion-safe:hover:-translate-y-1 motion-safe:hover:scale-[1.03]']) }}>
     <div class="flex items-center gap-3">
-        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-bordeaux-50 text-bordeaux-700">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-bordeaux-50 text-bordeaux-700 transition-colors duration-200 group-hover:bg-bordeaux-600 group-hover:text-white">
             <x-icon :name="$icon" class="h-[18px] w-[18px]" />
         </span>
         <p class="min-w-0 text-sm text-stone-500">{{ $label }}</p>

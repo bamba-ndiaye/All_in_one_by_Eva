@@ -140,8 +140,8 @@
     @endif
 
     {{-- ================= Journée ================= --}}
-    <div class="grid gap-6 lg:grid-cols-3">
-        <div class="lg:col-span-2">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="min-w-0 lg:col-span-2">
             @if ($rendezVous !== null)
                 <section class="card overflow-hidden p-0">
                     <div class="flex items-center justify-between px-6 pt-6">
@@ -151,7 +151,40 @@
                     @if ($rendezVous->isEmpty())
                         <p class="px-6 py-6 text-sm text-stone-500">Aucun rendez-vous aujourd'hui.</p>
                     @else
-                        <ul class="mt-4 divide-y divide-beige-100">
+                        @php
+                            $compte = fn (array $statuts) => $rendezVous->filter(fn ($r) => in_array($r->statut, $statuts, true))->count();
+                            $groupes = [
+                                ['nom' => 'Terminés', 'valeur' => $compte([\App\Enums\StatutRendezVous::Termine]), 'classe' => 'text-bordeaux-600', 'pastille' => 'bg-bordeaux-600'],
+                                ['nom' => 'En cours', 'valeur' => $compte([\App\Enums\StatutRendezVous::ClientArrive, \App\Enums\StatutRendezVous::EnCours]), 'classe' => 'text-bordeaux-300', 'pastille' => 'bg-bordeaux-300'],
+                                ['nom' => 'À venir', 'valeur' => $compte([\App\Enums\StatutRendezVous::EnAttente, \App\Enums\StatutRendezVous::Confirme]), 'classe' => 'text-beige-400', 'pastille' => 'bg-beige-400'],
+                                ['nom' => 'Absentes', 'valeur' => $compte([\App\Enums\StatutRendezVous::ClientAbsent]), 'classe' => 'text-stone-400', 'pastille' => 'bg-stone-400'],
+                            ];
+                            $prochain = $rendezVous->first(fn ($r) => $r->statut->estModifiable());
+                        @endphp
+                        <div class="mt-4 flex flex-wrap items-center gap-x-8 gap-y-4 border-y border-beige-100 bg-beige-50/60 px-6 py-5">
+                            <x-anneau :segments="$groupes" :total="$rendezVous->count()" taille="h-24 w-24"
+                                      :label="$groupes[0]['valeur'].' rendez-vous terminés sur '.$rendezVous->count()">
+                                <span class="font-serif text-2xl font-semibold tabular-nums text-bordeaux-900">{{ $groupes[0]['valeur'] }}<span class="text-base text-stone-400">/{{ $rendezVous->count() }}</span></span>
+                                <span class="text-[11px] text-stone-500">terminés</span>
+                            </x-anneau>
+                            <div class="min-w-0 flex-1">
+                                <ul class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                    @foreach ($groupes as $g)
+                                        <li class="flex items-center gap-2">
+                                            <span class="h-2.5 w-2.5 shrink-0 rounded-full {{ $g['pastille'] }}"></span>
+                                            <span class="text-stone-600">{{ $g['nom'] }}</span>
+                                            <span class="ml-auto font-semibold tabular-nums text-stone-800">{{ $g['valeur'] }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                                @if ($prochain)
+                                    <p class="mt-3 truncate text-xs text-stone-500">
+                                        Prochain : <span class="font-semibold text-bordeaux-900">{{ $prochain->debut() }}</span> · {{ $prochain->client->nomComplet() }}
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+                        <ul class="divide-y divide-beige-100">
                             @foreach ($rendezVous as $rdv)
                                 @php
                                     $aEncaisser = $peutEncaisser
@@ -184,11 +217,53 @@
             @endif
         </div>
 
-        <div class="space-y-6">
+        <div class="min-w-0 space-y-6">
             @if ($encaisseJour !== null)
                 <section class="card">
                     <h2 class="text-lg font-semibold">Caisse du jour</h2>
-                    <p class="mt-3 font-serif text-3xl font-semibold text-bordeaux-900">{{ $fcfa($encaisseJour) }}</p>
+                    <div class="mt-4 flex items-center gap-5">
+                        @if ($prevuJour > 0)
+                            @php $pourcent = (int) round($encaisseJour * 100 / $prevuJour); @endphp
+                            <x-anneau :segments="[['valeur' => min($encaisseJour, $prevuJour), 'classe' => 'text-bordeaux-600']]" :total="$prevuJour"
+                                      taille="h-24 w-24" :label="$pourcent.' % du montant prévu aujourd\'hui est encaissé'">
+                                <span class="text-lg font-semibold tabular-nums text-bordeaux-900">{{ $pourcent }} %</span>
+                                <span class="text-[10px] text-stone-500">du prévu</span>
+                            </x-anneau>
+                        @endif
+                        <div class="min-w-0">
+                            <p class="whitespace-nowrap font-serif text-2xl font-semibold text-bordeaux-900">{{ $fcfa($encaisseJour) }}</p>
+                            <p class="mt-1 text-xs text-stone-500">
+                                {{ $prevuJour > 0 ? 'sur '.$fcfa($prevuJour).' prévus aujourd\'hui' : 'encaissés aujourd\'hui' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- 7 derniers jours en barres --}}
+                    @php $maxJour = max(1, ...array_column($caisse7Jours, 'total')); @endphp
+                    <div class="mt-5" x-data="{ info: null }">
+                        <div class="flex h-20 items-end gap-1.5" @mouseleave="info = null"
+                             role="img" aria-label="Encaissé sur les 7 derniers jours">
+                            @foreach ($caisse7Jours as $j)
+                                @php $texte = $j['jour'].' : '.$fcfa($j['total']); @endphp
+                                <div class="group flex h-full flex-1 cursor-default flex-col justify-end"
+                                     @mouseenter="info = @js($texte)" @click="info = @js($texte)">
+                                    <div @class([
+                                            'rounded-t-[4px] transition-colors',
+                                            'bg-bordeaux-600' => $j['aujourdhui'],
+                                            'bg-bordeaux-200 group-hover:bg-bordeaux-400' => ! $j['aujourdhui'] && $j['total'] > 0,
+                                            'bg-beige-200' => $j['total'] === 0,
+                                         ])
+                                         style="height: {{ max(3, round($j['total'] * 100 / $maxJour)) }}%"></div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="mt-1.5 flex gap-1.5 text-center text-[10px]">
+                            @foreach ($caisse7Jours as $j)
+                                <span @class(['flex-1', 'font-semibold text-bordeaux-900' => $j['aujourdhui'], 'text-stone-400' => ! $j['aujourdhui']])>{{ $j['initiale'] }}</span>
+                            @endforeach
+                        </div>
+                        <p class="mt-2 min-h-4 text-xs text-stone-500" x-text="info ?? '7 derniers jours'">7 derniers jours</p>
+                    </div>
                     @if ($impayes->isNotEmpty())
                         @php $resteDu = $impayes->sum(fn ($r) => $r->resteAPayer()); @endphp
                         <a href="{{ route('paiements.impayes') }}" class="mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100">
@@ -210,11 +285,28 @@
                     @if ($anniversaires->isEmpty())
                         <p class="mt-3 text-sm text-stone-500">Aucun anniversaire cette semaine.</p>
                     @else
-                        <ul class="mt-3 space-y-2 text-sm">
+                        <ul class="mt-4 space-y-3 text-sm">
                             @foreach ($anniversaires->take(5) as $a)
-                                <li class="flex items-center justify-between gap-3">
-                                    <span class="truncate">{{ $a['client']->nomComplet() }}</span>
-                                    <span @class(['shrink-0 text-xs', 'font-semibold text-bordeaux-800' => $a['dans'] === 0, 'text-stone-500' => $a['dans'] > 0])>
+                                @php
+                                    $c = $a['client'];
+                                    $lettre = fn ($texte) => mb_substr(preg_replace('/[^\p{L}]/u', '', (string) $texte), 0, 1);
+                                    $initiales = mb_strtoupper($lettre($c->prenom).$lettre($c->nom));
+                                @endphp
+                                <li class="flex items-center gap-3">
+                                    <span @class([
+                                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                                        'bg-bordeaux-600 text-white ring-2 ring-bordeaux-200 ring-offset-2' => $a['dans'] === 0,
+                                        'bg-bordeaux-50 text-bordeaux-800' => $a['dans'] > 0,
+                                    ])>{{ $initiales }}</span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block truncate font-medium text-stone-800">{{ $c->nomComplet() }}</span>
+                                        <span class="block text-xs text-stone-500">{{ $a['age'] }} ans</span>
+                                    </span>
+                                    <span @class([
+                                        'shrink-0 rounded-full px-2.5 py-1 text-xs',
+                                        'bg-bordeaux-50 font-semibold text-bordeaux-800' => $a['dans'] === 0,
+                                        'bg-beige-50 text-stone-600' => $a['dans'] > 0,
+                                    ])>
                                         {{ $a['dans'] === 0 ? "Aujourd'hui 🎉" : ($a['dans'] === 1 ? 'Demain' : $a['date']->translatedFormat('l j')) }}
                                     </span>
                                 </li>
@@ -233,13 +325,23 @@
                     @if ($stockBas->isEmpty())
                         <p class="mt-3 text-sm text-stone-500">Rien à commander.</p>
                     @else
-                        <ul class="mt-3 space-y-2 text-sm">
+                        <ul class="mt-4 space-y-4 text-sm">
                             @foreach ($stockBas as $produit)
-                                <li class="flex items-center justify-between gap-3">
-                                    <a href="{{ route('produits.show', $produit) }}" class="truncate hover:text-bordeaux-800">{{ $produit->nom }}</a>
-                                    <span @class(['badge shrink-0', 'bg-red-50 text-red-700' => $produit->estEnRupture(), 'bg-amber-50 text-amber-700' => ! $produit->estEnRupture()])>
-                                        {{ $produit->estEnRupture() ? 'Rupture' : 'Reste '.$produit->quantite }}
-                                    </span>
+                                @php
+                                    $niveauStock = $produit->seuil_alerte > 0 ? min(100, (int) round(max(0, $produit->quantite) * 100 / $produit->seuil_alerte)) : 0;
+                                @endphp
+                                <li>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <a href="{{ route('produits.show', $produit) }}" class="truncate hover:text-bordeaux-800">{{ $produit->nom }}</a>
+                                        <span @class(['badge shrink-0', 'bg-red-50 text-red-700' => $produit->estEnRupture(), 'bg-amber-50 text-amber-700' => ! $produit->estEnRupture()])>
+                                            {{ $produit->estEnRupture() ? 'Rupture' : 'Reste '.$produit->quantite }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-beige-100" role="img"
+                                         aria-label="{{ $produit->quantite }} en stock pour un seuil d'alerte de {{ $produit->seuil_alerte }}">
+                                        <div class="h-full rounded-full {{ $produit->estEnRupture() ? 'bg-red-500' : 'bg-amber-400' }}" style="width: {{ $niveauStock }}%"></div>
+                                    </div>
+                                    <p class="mt-1 text-[11px] text-stone-400">{{ max(0, $produit->quantite) }} en stock · alerte à {{ $produit->seuil_alerte }}</p>
                                 </li>
                             @endforeach
                         </ul>

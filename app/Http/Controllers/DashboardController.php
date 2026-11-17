@@ -69,6 +69,8 @@ class DashboardController extends Controller
             'peutEncaisser' => $user->can('payments.record'),
             'encaisseJour' => $voitCaisse ? $caisse->totalEncaisse($aujourdhui, $aujourdhui) : null,
             'impayes' => $voitCaisse ? RendezVous::impayes()->get(['id', 'prix_prevu']) : null,
+            'prevuJour' => $voitCaisse ? $this->prevuDuJour($aujourdhui) : null,
+            'caisse7Jours' => $voitCaisse ? $this->caisse7Jours($aujourdhui) : null,
             'anniversaires' => $user->can('birthdays.view') ? $anniversaires->prochains(7) : null,
             'stockBas' => ($user->can('stock.view') || $user->can('stock.manage'))
                 ? Produit::enAlerte()->orderBy('quantite')->limit(5)->get()
@@ -116,6 +118,45 @@ class DashboardController extends Controller
         }
 
         return $serie;
+    }
+
+    /** Montant attendu aujourd'hui : prix prévus des rendez-vous du jour (hors annulés et absentes). */
+    private function prevuDuJour(CarbonImmutable $aujourdhui): int
+    {
+        return (int) RendezVous::query()
+            ->whereDate('date', $aujourdhui->toDateString())
+            ->whereNotIn('statut', [StatutRendezVous::Annule->value, StatutRendezVous::ClientAbsent->value])
+            ->sum('prix_prevu');
+    }
+
+    /**
+     * Encaissé par jour sur les 7 derniers jours (aujourd'hui compris).
+     *
+     * @return list<array{date: string, initiale: string, jour: string, total: int, aujourdhui: bool}>
+     */
+    private function caisse7Jours(CarbonImmutable $aujourdhui): array
+    {
+        $debut = $aujourdhui->subDays(6);
+
+        $totaux = Paiement::query()
+            ->entre($debut, $aujourdhui)
+            ->selectRaw('DATE(date) as jour, SUM(montant) as total')
+            ->groupBy('jour')
+            ->pluck('total', 'jour');
+
+        $jours = [];
+
+        for ($jour = $debut; $jour->lte($aujourdhui); $jour = $jour->addDay()) {
+            $jours[] = [
+                'date' => $jour->toDateString(),
+                'initiale' => JourSemaine::from($jour->dayOfWeekIso)->initiale(),
+                'jour' => ucfirst($jour->translatedFormat('l j')),
+                'total' => (int) ($totaux[$jour->toDateString()] ?? 0),
+                'aujourdhui' => $jour->equalTo($aujourdhui),
+            ];
+        }
+
+        return $jours;
     }
 
     /**

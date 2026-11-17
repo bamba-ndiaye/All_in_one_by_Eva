@@ -187,6 +187,50 @@ class TableauDeBordTest extends CaisseTestCase
         $this->actingAs($pro)->get(route('dashboard'))->assertDontSee('Heures de pointe');
     }
 
+    public function test_anneau_d_avancement_des_rendez_vous_du_jour(): void
+    {
+        $heure = fn (string $h) => ['date' => '2026-11-09', 'heure_debut' => "$h:00:00", 'heure_fin' => "$h:45:00"];
+        $this->rdv(StatutRendezVous::Termine, $heure('09'));
+        $this->rdv(StatutRendezVous::EnCours, $heure('10'));
+        $prochain = Client::factory()->create(['prenom' => 'Prochaine', 'nom' => 'Cliente']);
+        $this->rdv(StatutRendezVous::Confirme, $heure('14') + ['client_id' => $prochain->id]);
+
+        $this->actingAs($this->receptionniste)->get(route('dashboard'))
+            ->assertSee('aria-label="1 rendez-vous terminés sur 3"', false)
+            ->assertSee('Prochain :', false)
+            ->assertSee('Prochaine Cliente');
+    }
+
+    public function test_caisse_du_jour_anneau_du_prevu_et_barres_7_jours(): void
+    {
+        $termine = $this->rdv(StatutRendezVous::Termine, ['date' => '2026-11-09', 'prix_prevu' => 20000]);
+        $this->rdv(StatutRendezVous::Confirme, ['date' => '2026-11-09', 'heure_debut' => '16:00:00', 'heure_fin' => '16:45:00', 'prix_prevu' => 20000]);
+        $this->rdv(StatutRendezVous::Annule, ['date' => '2026-11-09', 'heure_debut' => '17:00:00', 'heure_fin' => '17:45:00', 'prix_prevu' => 99000]);
+        $this->payer($termine, 20000);
+
+        $reponse = $this->actingAs($this->receptionniste)->get(route('dashboard'))
+            ->assertSee('50 %')
+            ->assertSee('du prévu');
+
+        $this->assertSame(40000, $reponse->viewData('prevuJour'));
+
+        $jours = $reponse->viewData('caisse7Jours');
+        $this->assertCount(7, $jours);
+        $this->assertSame('2026-11-03', $jours[0]['date']);
+        $this->assertSame(['L', 20000, true], [end($jours)['initiale'], end($jours)['total'], end($jours)['aujourdhui']]);
+    }
+
+    public function test_jauge_de_stock_et_initiales_des_anniversaires(): void
+    {
+        Produit::factory()->create(['nom' => 'Cire tiède', 'seuil_alerte' => 4]);
+        Client::factory()->create(['prenom' => 'Awa', 'nom' => 'Diop', 'date_naissance' => '1996-11-09']);
+
+        $this->actingAs($this->admin)->get(route('dashboard'))
+            ->assertSee('0 en stock · alerte à 4')
+            ->assertSee('>AD</span>', false)
+            ->assertSee('30 ans');
+    }
+
     public function test_boutons_d_action_selon_les_droits(): void
     {
         $this->actingAs($this->receptionniste)->get(route('dashboard'))
