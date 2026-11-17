@@ -6,7 +6,7 @@ import {
     LayoutDashboard, Users, CalendarDays, Scissors, Wallet, Receipt,
     Package, UserCog, Cake, MessageCircle, Gift, TrendingUp, Settings,
     LogOut, Menu, X, Sparkles, CircleCheck, CircleAlert, Info, Lock, ShieldCheck,
-    CirclePlus, Clock, TriangleAlert,
+    CirclePlus, Clock, TriangleAlert, Search,
 } from 'lucide';
 
 window.Alpine = Alpine;
@@ -16,7 +16,7 @@ const icons = {
     LayoutDashboard, Users, CalendarDays, Scissors, Wallet, Receipt,
     Package, UserCog, Cake, MessageCircle, Gift, TrendingUp, Settings,
     LogOut, Menu, X, Sparkles, CircleCheck, CircleAlert, Info, Lock, ShieldCheck,
-    CirclePlus, Clock, TriangleAlert,
+    CirclePlus, Clock, TriangleAlert, Search,
 };
 
 document.addEventListener('DOMContentLoaded', () => {
