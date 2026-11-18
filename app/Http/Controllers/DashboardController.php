@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\JourSemaine;
 use App\Enums\StatutRendezVous;
 use App\Models\Depense;
 use App\Models\Paiement;
@@ -51,10 +52,12 @@ class DashboardController extends Controller
         // --- Finances (administratrice) -------------------------------------------
         $finances = null;
         $serie = null;
+        $serieMois = null;
 
         if ($user->can('finance.view_revenue')) {
             $finances = $rapports->finances($debutMois, $aujourdhui);
             $serie = $this->serie30Jours($aujourdhui);
+            $serieMois = $this->serie12Mois($aujourdhui);
         }
 
         return view('dashboard', [
@@ -66,12 +69,16 @@ class DashboardController extends Controller
             'peutEncaisser' => $user->can('payments.record'),
             'encaisseJour' => $voitCaisse ? $caisse->totalEncaisse($aujourdhui, $aujourdhui) : null,
             'impayes' => $voitCaisse ? RendezVous::impayes()->get(['id', 'prix_prevu']) : null,
+            'prevuJour' => $voitCaisse ? $this->prevuDuJour($aujourdhui) : null,
+            'caisse7Jours' => $voitCaisse ? $this->caisse7Jours($aujourdhui) : null,
             'anniversaires' => $user->can('birthdays.view') ? $anniversaires->prochains(7) : null,
             'stockBas' => ($user->can('stock.view') || $user->can('stock.manage'))
                 ? Produit::enAlerte()->orderBy('quantite')->limit(5)->get()
                 : null,
             'finances' => $finances,
             'serie' => $serie,
+            'serieMois' => $serieMois,
+            'affluence' => $voitTout ? $this->affluence($aujourdhui) : null,
             'prestations' => $finances ? $rapports->prestations($debutMois, $aujourdhui, 5) : null,
         ]);
     }
@@ -111,5 +118,135 @@ class DashboardController extends Controller
         }
 
         return $serie;
+    }
+
+    /** Montant attendu aujourd'hui : prix prévus des rendez-vous du jour (hors annulés et absentes). */
+    private function prevuDuJour(CarbonImmutable $aujourdhui): int
+    {
+        return (int) RendezVous::query()
+            ->whereDate('date', $aujourdhui->toDateString())
+            ->whereNotIn('statut', [StatutRendezVous::Annule->value, StatutRendezVous::ClientAbsent->value])
+            ->sum('prix_prevu');
+    }
+
+    /**
+     * Encaissé par jour sur les 7 derniers jours (aujourd'hui compris).
+     *
+     * @return list<array{date: string, initiale: string, jour: string, total: int, aujourdhui: bool}>
+     */
+    private function caisse7Jours(CarbonImmutable $aujourdhui): array
+    {
+        $debut = $aujourdhui->subDays(6);
+
+        $totaux = Paiement::query()
+            ->entre($debut, $aujourdhui)
+            ->selectRaw('DATE(date) as jour, SUM(montant) as total')
+            ->groupBy('jour')
+            ->pluck('total', 'jour');
+
+        $jours = [];
+
+        for ($jour = $debut; $jour->lte($aujourdhui); $jour = $jour->addDay()) {
+            $jours[] = [
+                'date' => $jour->toDateString(),
+                'initiale' => JourSemaine::from($jour->dayOfWeekIso)->initiale(),
+                'jour' => ucfirst($jour->translatedFormat('l j')),
+                'total' => (int) ($totaux[$jour->toDateString()] ?? 0),
+                'aujourdhui' => $jour->equalTo($aujourdhui),
+            ];
+        }
+
+        return $jours;
+    }
+
+    /**
+     * Encaissé et dépensé par mois sur les 12 derniers mois (mois en cours compris, partiel).
+     *
+     * @return list<array{date: string, libelle: string, titre: string, encaisse: int, depenses: int, en_cours: bool}>
+     */
+    private function serie12Mois(CarbonImmutable $aujourdhui): array
+    {
+        $debut = $aujourdhui->startOfMonth()->subMonthsNoOverflow(11);
+
+        // Totaux par jour (DATE() marche partout), regroupés par mois en PHP.
+        $parMois = fn ($query) => $query
+            ->entre($debut, $aujourdhui)
+            ->selectRaw('DATE(date) as jour, SUM(montant) as total')
+            ->groupBy('jour')
+            ->pluck('total', 'jour')
+            ->groupBy(fn ($total, $jour) => substr((string) $jour, 0, 7), preserveKeys: true)
+            ->map(fn ($jours) => (int) $jours->sum());
+
+        $encaisse = $parMois(Paiement::query());
+        $depenses = $parMois(Depense::query()->valides());
+
+        $serie = [];
+
+        for ($mois = $debut; $mois->lte($aujourdhui); $mois = $mois->addMonthNoOverflow()) {
+            $cle = $mois->format('Y-m');
+            $serie[] = [
+                'date' => $cle,
+                'libelle' => $mois->translatedFormat('M y'),
+                'titre' => ucfirst($mois->translatedFormat('F Y')),
+                'encaisse' => $encaisse[$cle] ?? 0,
+                'depenses' => $depenses[$cle] ?? 0,
+                'en_cours' => $mois->isSameMonth($aujourdhui),
+            ];
+        }
+
+        return $serie;
+    }
+
+    /**
+     * Heures de pointe : rendez-vous (hors annulés) des 8 dernières semaines, par jour et par heure de début.
+     *
+     * @return array{heures: list<int>, jours: list<array{jour: JourSemaine, cases: list<int>}>,
+     *               max: int, total: int, pic: ?array{jour: JourSemaine, heure: int, nombre: int}}
+     */
+    private function affluence(CarbonImmutable $aujourdhui): array
+    {
+        $creneaux = RendezVous::query()
+            ->whereDate('date', '>=', $aujourdhui->subWeeks(8)->addDay()->toDateString())
+            ->whereDate('date', '<=', $aujourdhui->toDateString())
+            ->where('statut', '!=', StatutRendezVous::Annule->value)
+            ->get(['date', 'heure_debut']);
+
+        $comptes = [];
+
+        foreach ($creneaux as $rdv) {
+            $jour = CarbonImmutable::parse($rdv->date)->dayOfWeekIso;
+            $heure = (int) substr((string) $rdv->heure_debut, 0, 2);
+            $comptes[$jour][$heure] = ($comptes[$jour][$heure] ?? 0) + 1;
+        }
+
+        // Plage d'heures : au moins 9 h – 19 h, élargie si des rendez-vous débordent.
+        $heuresVues = collect($comptes)->flatMap(fn ($h) => array_keys($h));
+        $heures = range(min(9, $heuresVues->min() ?? 9), max(19, $heuresVues->max() ?? 19));
+
+        $pic = null;
+        $jours = [];
+
+        foreach (JourSemaine::cases() as $jour) {
+            $cases = [];
+
+            foreach ($heures as $heure) {
+                $nombre = $comptes[$jour->value][$heure] ?? 0;
+                $cases[] = $nombre;
+
+                if ($nombre > ($pic['nombre'] ?? 0)) {
+                    $pic = ['jour' => $jour, 'heure' => $heure, 'nombre' => $nombre];
+                }
+            }
+
+            $jours[] = ['jour' => $jour, 'cases' => $cases];
+        }
+
+        return [
+            'heures' => $heures,
+            'jours' => $jours,
+            'max' => $pic['nombre'] ?? 0,
+            'total' => $creneaux->count(),
+            'pic' => $pic,
+        ];
     }
 }
