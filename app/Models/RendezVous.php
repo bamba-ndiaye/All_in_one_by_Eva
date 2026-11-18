@@ -96,6 +96,11 @@ class RendezVous extends Model
     /** Total encaissé, annulations déduites. */
     public function montantPaye(): int
     {
+        // Déjà calculé par withSum('paiements', 'montant') : pas de requête en plus.
+        if (array_key_exists('paiements_sum_montant', $this->attributes)) {
+            return (int) $this->attributes['paiements_sum_montant'];
+        }
+
         return (int) $this->paiements()->sum('montant');
     }
 

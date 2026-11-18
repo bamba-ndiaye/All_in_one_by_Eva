@@ -37,6 +37,7 @@ class DashboardController extends Controller
         $rendezVous = ($voitTout || ($voitSiens && $monEmploye))
             ? RendezVous::query()
                 ->with(['client', 'employe'])
+                ->withSum('paiements', 'montant')
                 ->whereDate('date', $aujourdhui->toDateString())
                 ->whereNotIn('statut', [StatutRendezVous::Annule->value])
                 ->when($monEmploye, fn ($q) => $q->where('employe_id', $monEmploye->id))
@@ -62,6 +63,7 @@ class DashboardController extends Controller
             'rendezVous' => $rendezVous,
             'voitTousLesRdv' => $voitTout,
             'voitSiens' => $voitSiens,
+            'peutEncaisser' => $user->can('payments.record'),
             'encaisseJour' => $voitCaisse ? $caisse->totalEncaisse($aujourdhui, $aujourdhui) : null,
             'impayes' => $voitCaisse ? RendezVous::impayes()->get(['id', 'prix_prevu']) : null,
             'anniversaires' => $user->can('birthdays.view') ? $anniversaires->prochains(7) : null,

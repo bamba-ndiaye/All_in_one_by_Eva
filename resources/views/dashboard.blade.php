@@ -90,15 +90,25 @@
                     @else
                         <ul class="mt-4 divide-y divide-beige-100">
                             @foreach ($rendezVous as $rdv)
-                                <li>
-                                    <a href="{{ route('rendez-vous.show', $rdv) }}" class="flex items-center gap-4 px-6 py-3 transition hover:bg-beige-50">
+                                @php
+                                    $aEncaisser = $peutEncaisser
+                                        && $rdv->statut === \App\Enums\StatutRendezVous::Termine
+                                        && $rdv->resteAPayer() > 0;
+                                @endphp
+                                <li class="flex items-center gap-3 pr-6 transition hover:bg-beige-50">
+                                    <a href="{{ route('rendez-vous.show', $rdv) }}" class="flex min-w-0 flex-1 items-center gap-4 py-3 pl-6">
                                         <span class="w-14 shrink-0 font-semibold tabular-nums text-bordeaux-900">{{ $rdv->debut() }}</span>
                                         <span class="min-w-0 flex-1">
                                             <span class="block truncate font-medium">{{ $rdv->client->nomComplet() }}</span>
                                             <span class="block truncate text-xs text-stone-500">avec {{ $rdv->employe->nomComplet() }} · jusqu'à {{ $rdv->fin() }}</span>
                                         </span>
-                                        <span class="badge shrink-0 {{ $rdv->statut->badge() }}">{{ $rdv->statut->label() }}</span>
+                                        <span class="badge hidden shrink-0 sm:inline-flex {{ $rdv->statut->badge() }}">{{ $rdv->statut->label() }}</span>
                                     </a>
+                                    @if ($aEncaisser)
+                                        <a href="{{ route('paiements.create', ['rendez_vous' => $rdv->id]) }}" class="btn-primary shrink-0 !px-3 !py-1.5 text-xs">
+                                            Encaisser {{ \App\Support\Fcfa::format($rdv->resteAPayer()) }}
+                                        </a>
+                                    @endif
                                 </li>
                             @endforeach
                         </ul>

@@ -17,7 +17,7 @@
 
     {{-- Barre latérale --}}
     <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-           class="fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-bordeaux-900 text-bordeaux-50
+           class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-bordeaux-900 text-bordeaux-50
                   transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0">
 
         <div class="flex items-center justify-between px-6 py-6">
@@ -84,11 +84,20 @@
 
     {{-- Contenu --}}
     <div class="flex min-w-0 flex-1 flex-col">
-        <header class="sticky top-0 z-20 flex items-center gap-4 border-b border-beige-200 bg-creme/90 px-4 py-3 backdrop-blur lg:hidden">
-            <button type="button" @click="sidebarOpen = true" class="text-bordeaux-800" aria-label="Ouvrir le menu">
+        @php $rechercheClients = auth()->user()->can('viewAny', \App\Models\Client::class); @endphp
+        <header @class([
+            'sticky top-0 z-20 flex items-center gap-3 border-b border-beige-200 bg-creme/90 px-4 py-3 backdrop-blur sm:px-8 lg:px-10',
+            'lg:hidden' => ! $rechercheClients,
+        ])>
+            <button type="button" @click="sidebarOpen = true" class="shrink-0 text-bordeaux-800 lg:hidden" aria-label="Ouvrir le menu">
                 <x-icon name="menu" class="h-6 w-6" />
             </button>
-            <x-brand />
+            <div @class(['shrink-0 lg:hidden', 'hidden sm:block' => $rechercheClients])><x-brand /></div>
+            @if ($rechercheClients)
+                <div class="ml-auto w-full max-w-md">
+                    <x-recherche-clients />
+                </div>
+            @endif
         </header>
 
         <main class="flex-1 px-4 py-8 sm:px-8 lg:px-10">
