@@ -242,6 +242,10 @@ class RendezVousCrudTest extends AgendaTestCase
 
     public function test_la_recherche_de_clients(): void
     {
+        // Le client de la configuration commune a un numéro aléatoire : on le fixe pour qu'il
+        // ne puisse jamais contenir « 77123 » par hasard.
+        $this->client->update(['telephone' => '+221761112233']);
+
         Client::factory()->inactif()->create(['prenom' => 'Zorra', 'nom' => 'Archivee']);
         $this->actingAs($this->receptionniste);
 
