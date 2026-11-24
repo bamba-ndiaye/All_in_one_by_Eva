@@ -1,0 +1,55 @@
+
+# Étape 1 : Dépendances PHP
+FROM composer:2 AS composer_build
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-progress \
+    --prefer-dist \
+    --no-scripts
+
+# Étape 2 : Compilation frontend
+FROM node:20-alpine AS frontend_build
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# Étape 3 : Application de production
+FROM php:8.4-fpm
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx \
+    libzip-dev libicu-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql zip intl gd bcmath opcache \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /var/www/html
+
+COPY . .
+COPY --from=composer_build /app/vendor ./vendor
+
+RUN rm -f bootstrap/cache/*.php \
+    && php artisan package:discover --ansi
+COPY --from=frontend_build /app/public/build ./public/build
+
+COPY docker/nginx/render.conf /etc/nginx/conf.d/default.conf
+COPY docker/start.sh /usr/local/bin/start.sh
+
+RUN chmod +x /usr/local/bin/start.sh \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+EXPOSE 10000
+
+CMD ["/usr/local/bin/start.sh"]
